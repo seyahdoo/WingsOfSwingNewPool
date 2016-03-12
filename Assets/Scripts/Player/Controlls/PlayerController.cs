@@ -11,12 +11,14 @@ public class PlayerController: MonoBehaviour {
 
     public Transform[] PlacesToBe;
     public Transform[] ComboPlaces;
-    private SmoothFollow _smoothFollow;
+    protected SmoothFollow _smoothFollow;
 
     public float Go_Return_Time = 1.0f;
     public float Combo_Return_Time = 2.0f;
-    Timer GoTimer = new Timer();
-    Timer ComboTimer = new Timer();
+    protected Timer GoTimer = new Timer();
+    protected Timer ComboTimer = new Timer();
+
+    public TouchManager.Direction[] Memory;
 
     public bool Going;
     public TouchManager.Direction GoDirection;
@@ -31,31 +33,23 @@ public class PlayerController: MonoBehaviour {
 
     void Awake()
     {
-        _smoothFollow = GetComponent<SmoothFollow>();
-
-        TouchManager.Instance.playerController = this;
-
-        EventManager.GameOverEvent += Stop;
-        EventManager.GameStartEvent += Start;
+        Initialize();
 
         //if mat == null : get mat
-    } 
+    }
+
+    public virtual void Swipe(TouchManager.Direction SwipeDirection) { }
+    public virtual void Click(TouchManager.Direction ClickArea) { }
+
     void Update()
-    {        
+    {
         //Work with timers, becouse its cool, like hitler(hit's)
         GoReturnLogic();
         ComboReturnLogic();
     }
-    
-    public void Swipe(TouchManager.Direction SwipeDirection)
-    {
-        if (Immobilized) return;
 
-        HandleGo(SwipeDirection);
-        HandleCharge(SwipeDirection);
-    }
-    
-    void HandleGo(TouchManager.Direction Direction)
+
+    protected void GoTo(TouchManager.Direction Direction)
     {
 
         Going = true;
@@ -68,13 +62,13 @@ public class PlayerController: MonoBehaviour {
         ComboDirection = TouchManager.Direction.Nowhere;
         ComboTimer.SetActive(false);
         MyMat.color = Color.blue;
-        
+
     }
-    void GoReturnLogic()
+    protected void GoReturnLogic()
     {
         //after seconds
         if (!GoTimer.Contunie) return;
-        
+
         Going = false;
         GoDirection = TouchManager.Direction.Nowhere;
         _smoothFollow.TargetTransform = PlacesToBe[(int)TouchManager.Direction.Down];
@@ -82,49 +76,13 @@ public class PlayerController: MonoBehaviour {
         //reset Charge
         ChargeCount = 0;
         ChargeDirection = TouchManager.Direction.Nowhere;
+
+        //reset Memory
+        Memory[0] = TouchManager.Direction.Nowhere;
+        Memory[1] = TouchManager.Direction.Nowhere;
     }
-    
-    void HandleCharge(TouchManager.Direction Direction)
-    {
 
-        //HandleCharging,Combo
-        if (ChargeCount >= 0)
-        {
-            if (Direction == ChargeDirection)
-                ChargeCount++;
-
-            if (Direction != ChargeDirection)
-            {
-                if (ChargeCount >= 1)
-                {
-                    //Stop go Timer
-                    GoTimer.SetActive(false);
-
-                    //Start Combo(Direction, charge count)
-                    Combo(Direction,ChargeDirection, ChargeCount);
-
-                    //reset Handler
-                    ChargeCount = 0;
-                    ChargeDirection = TouchManager.Direction.Nowhere;
-                }
-                else
-                {
-                    ChargeCount = 0;
-                    ChargeDirection = Direction;
-                }
-
-            }
-        }
-        else
-        {
-            //what if charge = -1??? 
-            ChargeDirection = Direction;
-            ChargeCount = 0;
-        }
-
-
-    }
-    void Combo(TouchManager.Direction ToDirection, TouchManager.Direction FromDirection, int Power)
+    protected void Combo(TouchManager.Direction ToDirection, TouchManager.Direction FromDirection, int Power)
     {
         //Combo Start!
 #if UNITY_EDITOR
@@ -132,8 +90,8 @@ public class PlayerController: MonoBehaviour {
 #endif
         Comboing = true;
         ComboDirection = ToDirection;
-        if (DEBUG) Debug.Log("Comboing to " + ToDirection + " From "+ FromDirection + " at the power of " + Power + "!");
-        
+        if (DEBUG) Debug.Log("Comboing to " + ToDirection + " From " + FromDirection + " at the power of " + Power + "!");
+
         //immobilize
         //Immobilized = true;
 
@@ -142,22 +100,22 @@ public class PlayerController: MonoBehaviour {
         ComboTimer.SetTimer(Combo_Return_Time);
 
         //change color
-        if(FromDirection == TouchManager.Direction.Down)
+        if (FromDirection == TouchManager.Direction.Down)
             MyMat.color = Color.cyan;
-        else if(FromDirection == TouchManager.Direction.Up)
+        else if (FromDirection == TouchManager.Direction.Up)
             MyMat.color = Color.green;
-        else 
+        else
             MyMat.color = Color.red;
 
 
     }
-    void ComboReturnLogic()
+    protected void ComboReturnLogic()
     {
         //after seconds
         if (!ComboTimer.Contunie) return;
 
         if (DEBUG) Debug.Log("Combo Returned");
-        
+
         Comboing = false;
         ComboDirection = TouchManager.Direction.Nowhere;
 
@@ -169,8 +127,12 @@ public class PlayerController: MonoBehaviour {
 
         //change color
         MyMat.color = Color.blue;
-    }
 
+        //reset Memory
+        Memory[0] = TouchManager.Direction.Nowhere;
+        Memory[1] = TouchManager.Direction.Nowhere;
+    }
+    
 
     public void Stop()
     {
@@ -189,9 +151,7 @@ public class PlayerController: MonoBehaviour {
 
     }
 
-
-
-
+    
     public void Die()
     {
 
@@ -203,14 +163,13 @@ public class PlayerController: MonoBehaviour {
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log("asdasd");
-
+       
         if (other.tag == "Enemy")
         {
 
             if (Comboing)
             {
-                //PoolManager.Instance.ReturnObject(other.gameObject);
+                other.Release();
             }
             else
             {
@@ -220,5 +179,17 @@ public class PlayerController: MonoBehaviour {
         
     }
 
+
+    protected void Initialize()
+    {
+
+        _smoothFollow = GetComponent<SmoothFollow>();
+
+        TouchManager.Instance.playerController = this;
+
+        EventManager.GameOverEvent += Stop;
+        EventManager.GameStartEvent += Start;
+
+    }
 
 }

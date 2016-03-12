@@ -73,7 +73,7 @@ public class TouchManager : Singleton<TouchManager>
         {
             //then clicked
             //Debug.Log("Clicked " + CalculateAreaFromPixels(StartPoint));
-
+            playerController.Click(CalculateAreaFromPixels(StartPoint));
         }
 
         if (dif.magnitude > SwipeTreshold)

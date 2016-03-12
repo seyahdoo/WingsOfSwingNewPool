@@ -32,7 +32,7 @@ public class MovingObjectBehaviour : MonoBehaviour {
     {
 
         //PoolManager.Instance.ReturnObject(this.gameObject);
-
+        this.Release();
     }
 
 

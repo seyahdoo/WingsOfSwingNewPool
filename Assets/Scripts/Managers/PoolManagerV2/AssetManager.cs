@@ -24,10 +24,11 @@ public class AssetManager : Singleton<AssetManager>
         public Pool Pool;
     }
 
+    [System.Serializable]
     public class ToBePoolObject
     {
         public GameObject Sample;
-        public GameObject PoolSize;
+        public int PoolSize;
     }
 
 
@@ -68,16 +69,16 @@ public class AssetManager : Singleton<AssetManager>
                 return p.GetOne();
             }
 
-            GameObject go = new GameObject(ObjectName + " Pool");
-            go.transform.SetParent(this.transform);
-            p = go.AddComponent<Pool>();
+            //GameObject go = new GameObject(ObjectName + " Pool");
+            //go.transform.SetParent(this.transform);
+            //p = go.AddComponent<Pool>();
+            //
+            //p.ObjectName = poo.Sample.name;
+            //p.Original = poo.Sample;
+            //p.InstantiatePool(poo.DesiredPoolSize);
+            poo.Pool = CreatePool(poo.Sample,poo.DesiredPoolSize,true);
             
-            p.ObjectName = poo.Sample.name;
-            p.Original = poo.Sample;
-            p.InstantiatePool(poo.DesiredPoolSize);
-            poo.Pool = p;
-
-            return p.GetOne();
+            return poo.Pool.GetOne();
         }
 
         //create one
@@ -148,18 +149,35 @@ public class AssetManager : Singleton<AssetManager>
 
         PoolDictionary.Add(Sample.name, p);
     }
-    public void CreatePool(string name)
+    public Pool CreatePool(GameObject Sample, int Size, bool ToInstantiate)
     {
         //todo, fix this
 
-        Pool p = new Pool();
-        p.Original = PoolDictionary[name].Sample;
-        p.InstantiatePool(PoolDictionary[name].DesiredPoolSize);
+        //Pool p = new Pool();
+        //p.Original = PoolDictionary[name].Sample;
+        //p.InstantiatePool(PoolDictionary[name].DesiredPoolSize);
+
+        Pool p;
+
+        GameObject go = new GameObject(Sample.name + " Pool");
+        go.transform.SetParent(this.transform);
+        p = go.AddComponent<Pool>();
+
+        p.ObjectName = Sample.name;
+        p.Original = Sample;
+        p.InstantiatePool(Size);
+
+        return p;
     }
 
 
     public void Initialize()
     {
+        foreach (var obj in ObjectsToInitialize)
+        {
+            CreateDefinition(obj.Sample, obj.PoolSize);
+        }
+
 
 
     }
